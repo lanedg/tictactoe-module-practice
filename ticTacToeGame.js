@@ -54,6 +54,8 @@ const GameController = (function () {
 
   const getActivePlayer = () => activePlayer;
 
+  const resetActivePlayer = () => (activePlayer = players[0]);
+
   const checkForWin = () => {
     let condition = activePlayer.token;
     for (let i = 0; i < 3; i++) {
@@ -99,13 +101,62 @@ const GameController = (function () {
   const attemptTurn = (row, collumn) => {
     if (GameBoard.getPositionValue(row, collumn) === null) {
       GameBoard.updateBoard(row, collumn, activePlayer.token);
-      checkForWin();
-      switchTurns();
+      //checkForWin();
+      //switchTurns();
       return true;
     } else {
       return false;
     }
   };
 
-  return { switchTurns, getActivePlayer, attemptTurn, checkForWin };
+  return {
+    switchTurns,
+    getActivePlayer,
+    attemptTurn,
+    checkForWin,
+    resetActivePlayer,
+  };
+})();
+
+const screenController = (function () {
+  const boardContainer = document.querySelector(".inner-cells");
+  const gridCells = Array.from(boardContainer.children);
+  const winPopup = document.getElementById("win-popup");
+  const winText = document.getElementById("win-text");
+  const winTextClose = document.getElementById("win-text-close");
+  const newGameButton = document.getElementById("new-game-button");
+  const gameText = document.getElementById("game-text");
+
+  winTextClose.addEventListener("click", function () {
+    winPopup.close();
+  });
+
+  const displayWin = (winBoolean) => {
+    if (winBoolean === true) {
+      winText.textContent = GameController.getActivePlayer().name + " Wins";
+      winPopup.showModal();
+    } else {
+      GameController.switchTurns();
+      gameText.textContent = GameController.getActivePlayer().name + " Turn: ";
+    }
+  };
+
+  gridCells.forEach((button) => {
+    const [rowNum, collumnNum] = button.id.split("-").map(Number);
+    button.addEventListener("click", function (event) {
+      const turnTaken = GameController.attemptTurn(rowNum, collumnNum);
+      if (turnTaken === true) {
+        button.textContent = GameController.getActivePlayer().token;
+        const gameOver = GameController.checkForWin();
+        displayWin(gameOver);
+      }
+    });
+  });
+
+  newGameButton.addEventListener("click", function () {
+    GameController.resetActivePlayer();
+    GameBoard.resetBoard();
+    gridCells.forEach((button) => (button.textContent = ""));
+    gameText.textContent = "Player 1 Turn:";
+  });
 })();
